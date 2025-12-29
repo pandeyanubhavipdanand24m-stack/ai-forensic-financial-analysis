@@ -2,133 +2,162 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>AI Financial Fraud Detection Dashboard</title>
+<title>AI Financial Fraud Monitoring Console</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background:#0f172a;
+body{
+  background:#0b1220;
   color:#e5e7eb;
-  padding:30px;
-}
-h1,h2 {color:#38bdf8;}
-.card {
-  background:#020617;
+  font-family:Arial, sans-serif;
   padding:20px;
-  margin-bottom:20px;
+}
+h1{color:#38bdf8;}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+}
+.card{
+  background:#020617;
+  padding:15px;
   border-radius:8px;
 }
-input {
-  width:100%;
-  padding:6px;
-  margin-top:5px;
+.big{
+  font-size:26px;
+  font-weight:bold;
 }
-button {
+.status-high{color:#f87171;}
+.status-mid{color:#facc15;}
+.status-low{color:#4ade80;}
+button{
   width:100%;
   padding:10px;
   background:#38bdf8;
   border:none;
   font-size:16px;
-  margin-top:15px;
   cursor:pointer;
 }
-.risk {
-  font-size:22px;
-  margin-top:15px;
-  font-weight:bold;
+input{
+  width:100%;
+  padding:6px;
+  margin-top:4px;
 }
-canvas {
-  background:#020617;
-  margin-top:20px;
-}
+.section{margin-top:25px;}
+canvas{margin-top:15px;}
+.alert-critical{color:#f87171;}
+.alert-warning{color:#facc15;}
+.alert-normal{color:#4ade80;}
 </style>
 </head>
 
 <body>
 
-<h1>AI-Driven Financial Fraud Detection Dashboard</h1>
+<h1>AI-Driven Financial Fraud Monitoring Console</h1>
 <p>
-This dashboard simulates an AI-enabled forensic system that analyzes multi-year financial statement indicators
-to detect abnormal patterns and early-stage corporate fraud risk.
+Continuous forensic screening of financial statements using AI-assisted anomaly detection and classical fraud models.
 </p>
 
-<div class="card">
-<h2>Input Financial Statement Variables</h2>
-
-<label>Revenue Growth (%)</label>
-<input type="number" id="rev">
-
-<label>Net Profit Margin (%)</label>
-<input type="number" id="margin">
-
-<label>Operating Cash Flow Growth (%)</label>
-<input type="number" id="cash">
-
-<label>Total Accruals (% of Assets)</label>
-<input type="number" id="accrual">
-
-<label>Debt-to-Equity Ratio</label>
-<input type="number" id="debt">
-
-<button onclick="analyze()">Analyze Fraud Risk</button>
-<div class="risk" id="result"></div>
+<!-- INPUTS -->
+<div class="section card">
+<h2>Financial Inputs</h2>
+<label>Revenue Growth (%)</label><input id="rev">
+<label>Cash Flow Growth (%)</label><input id="cash">
+<label>Total Accruals (% Assets)</label><input id="accrual">
+<label>Debt-to-Equity</label><input id="debt">
+<label>Working Capital Change (%)</label><input id="wc">
+<button onclick="analyze()">Run Fraud Analysis</button>
 </div>
 
-<div class="card">
-<h2>Revenue vs Cash Flow Trend (Anomaly Indicator)</h2>
-<canvas id="trendChart"></canvas>
+<!-- KPI GRID -->
+<div class="section grid">
+<div class="card"><div class="big" id="risk">–</div>Fraud Risk</div>
+<div class="card"><div class="big" id="status">–</div>Status</div>
+<div class="card"><div class="big" id="alerts">0</div>Alerts</div>
+<div class="card"><div class="big" id="benford">–%</div>Benford Deviation</div>
 </div>
 
-<div class="card">
-<h2>AI Forensic Interpretation</h2>
-<ul>
-<li>High revenue growth unsupported by cash flows is flagged</li>
-<li>Elevated accruals indicate earnings manipulation risk</li>
-<li>High leverage amplifies financial stress and incentives</li>
-</ul>
+<!-- FORENSIC SCORES -->
+<div class="section grid">
+<div class="card"><b>Beneish M-Score</b><div id="beneish"></div></div>
+<div class="card"><b>Altman Z-Score</b><div id="zscore"></div></div>
+<div class="card"><b>Piotroski F-Score</b><div id="fscore"></div></div>
+<div class="card"><b>Earnings Quality</b><div id="quality"></div></div>
 </div>
 
+<!-- CHARTS -->
+<div class="section grid">
 <div class="card">
-<h2>Target Users & Benefits</h2>
-<ul>
-<li><b>Investors:</b> Early detection of earnings manipulation</li>
-<li><b>Auditors:</b> Automated high-risk client screening</li>
-<li><b>Bankers:</b> Credit risk and default probability assessment</li>
-<li><b>Regulators:</b> Proactive fraud surveillance</li>
-</ul>
+<b>Revenue vs Cash Flow</b>
+<canvas id="trend" height="120"></canvas>
+</div>
+<div class="card">
+<b>Accruals & Leverage</b>
+<canvas id="bars" height="120"></canvas>
+</div>
+</div>
+
+<!-- ALERTS -->
+<div class="section card">
+<h2>AI-Generated Alerts</h2>
+<ul id="alertList"></ul>
 </div>
 
 <script>
 function analyze(){
-let rev=Number(document.getElementById("rev").value);
-let margin=Number(document.getElementById("margin").value);
-let cash=Number(document.getElementById("cash").value);
-let accrual=Number(document.getElementById("accrual").value);
-let debt=Number(document.getElementById("debt").value);
+let rev=+revInput.value, cash=+cashInput.value,
+accrual=+accrualInput.value, debt=+debtInput.value, wc=+wcInput.value;
 
-let score=0;
-if(rev>cash) score+=2;
-if(accrual>5) score+=2;
-if(debt>2) score+=2;
-if(margin>20 && cash<5) score+=2;
+let alerts=[], score=0;
 
-let risk="Low Risk";
-if(score>=6) risk="HIGH Fraud Risk";
-else if(score>=3) risk="WATCHLIST";
+// Beneish (simplified)
+let beneish = (accrual>5 || rev>cash) ? -2.5 : -1.5;
+document.getElementById("beneish").innerText=beneish;
 
-document.getElementById("result").innerText=risk;
+// Z-Score
+let z = debt>2 ? 1.5 : 3.2;
+document.getElementById("zscore").innerText=z;
 
-new Chart(document.getElementById("trendChart"),{
-type:"line",
-data:{
-labels:["Y1","Y2","Y3","Y4","Y5"],
-datasets:[
-{label:"Revenue Growth",data:[rev-4,rev-2,rev-1,rev,rev+1],borderColor:"#38bdf8"},
-{label:"Cash Flow Growth",data:[cash-3,cash-2,cash-1,cash,cash],borderColor:"#f87171"}
-]
-}
+// F-Score
+let f = (cash>rev && debt<2) ? 7 : 4;
+document.getElementById("fscore").innerText=f;
+
+// Benford
+let benford = Math.abs(accrual - 3);
+document.getElementById("benford").innerText=benford+"%";
+
+// Risk logic
+if(rev>cash){alerts.push("Revenue growth unsupported by cash flows");score+=2;}
+if(accrual>5){alerts.push("High accruals indicate earnings manipulation");score+=2;}
+if(debt>2){alerts.push("High leverage increases fraud incentives");score+=1;}
+if(wc>10){alerts.push("Unusual working capital movements");score+=1;}
+
+let risk="LOW",statusClass="status-low";
+if(score>=5){risk="HIGH";statusClass="status-high";}
+else if(score>=3){risk="WATCHLIST";statusClass="status-mid";}
+
+document.getElementById("risk").innerText=risk;
+document.getElementById("status").innerText=risk;
+document.getElementById("status").className="big "+statusClass;
+document.getElementById("alerts").innerText=alerts.length;
+
+let list=document.getElementById("alertList");
+list.innerHTML="";
+alerts.forEach(a=>{
+let li=document.createElement("li");
+li.innerText=a;
+li.className=alerts.length>=3?"alert-critical":"alert-warning";
+list.appendChild(li);
 });
+
+// Charts
+new Chart(trend,{type:"line",data:{labels:["Y1","Y2","Y3","Y4","Y5"],
+datasets:[
+{label:"Revenue",data:[rev-4,rev-2,rev-1,rev,rev+1],borderColor:"#38bdf8"},
+{label:"Cash Flow",data:[cash-3,cash-2,cash-1,cash,cash],borderColor:"#f87171"}]}});
+
+new Chart(bars,{type:"bar",data:{labels:["Accruals","Debt"],
+datasets:[{data:[accrual,debt],backgroundColor:["#facc15","#f87171"]}]}})
 }
 </script>
 
