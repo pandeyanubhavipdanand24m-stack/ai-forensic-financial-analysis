@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Greenwashing Detection Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      padding: 30px;
+    }
+    h1, h2 {
+      color: #38bdf8;
+    }
+    .card {
+      background: #020617;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px;
+      width: 100%;
+      background: #38bdf8;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .risk {
+      font-size: 22px;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>AI-Enabled Greenwashing Detection Dashboard</h1>
+<p>
+This dashboard simulates an AI-driven forensic model that detects abnormal ESG score manipulation by
+cross-verifying sustainability claims with financial statement variables.
+</p>
+
+<div class="card">
+  <h2>Input Financial & ESG Variables</h2>
+
+  <label>ESG Score Improvement (%)</label>
+  <input type="number" id="esg">
+
+  <label>Emission Reduction (%)</label>
+  <input type="number" id="emission">
+
+  <label>ESG Spend (% of Revenue)</label>
+  <input type="number" id="spend">
+
+  <label>Environmental Penalties (₹ Cr)</label>
+  <input type="number" id="penalty">
+
+  <label>Energy Cost Trend (% increase)</label>
+  <input type="number" id="energy">
+
+  <button onclick="calculateRisk()">Analyze Greenwashing Risk</button>
+
+  <div class="risk" id="result"></div>
+</div>
+
+<div class="card">
+  <h2>AI Forensic Interpretation</h2>
+  <ul>
+    <li>High ESG score growth without proportional emission reduction is flagged.</li>
+    <li>Low ESG spending with strong sustainability claims increases risk.</li>
+    <li>Penalties and rising energy costs contradict green narratives.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>Target Users & Benefits</h2>
+  <ul>
+    <li><b>Investors:</b> Avoid ESG mispricing and hidden risks</li>
+    <li><b>Auditors:</b> Detect ESG misrepresentation</li>
+    <li><b>Banks:</b> Assess ESG-linked credit risk</li>
+    <li><b>Regulators:</b> Identify misleading disclosures</li>
+  </ul>
+</div>
+
+<script>
+function calculateRisk() {
+  let esg = Number(document.getElementById("esg").value);
+  let emission = Number(document.getElementById("emission").value);
+  let spend = Number(document.getElementById("spend").value);
+  let penalty = Number(document.getElementById("penalty").value);
+  let energy = Number(document.getElementById("energy").value);
+
+  let score = 0;
+  if (esg > emission) score += 2;
+  if (spend < 1) score += 2;
+  if (penalty > 0) score += 2;
+  if (energy > 5) score += 1;
+
+  let result = "Low Risk";
+  if (score >= 5) result = "HIGH Greenwashing Risk";
+  else if (score >= 3) result = "MODERATE Greenwashing Risk";
+
+  document.getElementById("result").innerText = result;
+}
+</script>
+
+</body>
+</html>
