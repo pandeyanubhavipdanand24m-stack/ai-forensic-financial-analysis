@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Financial Fraud Detection Dashboard (Advanced)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+  background:#0b1220;
+  color:#e5e7eb;
+  font-family:Arial, sans-serif;
+  padding:20px;
+}
+h1{color:#38bdf8;}
+p{color:#cbd5e1;}
+.section{margin-top:25px;}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:15px;
+}
+.card{
+  background:#020617;
+  padding:15px;
+  border-radius:8px;
+}
+.big{
+  font-size:26px;
+  font-weight:bold;
+}
+.status-high{color:#f87171;}
+.status-mid{color:#facc15;}
+.status-low{color:#4ade80;}
+input{
+  width:100%;
+  padding:6px;
+  margin-top:4px;
+}
+button{
+  width:100%;
+  padding:10px;
+  background:#38bdf8;
+  border:none;
+  font-size:16px;
+  cursor:pointer;
+}
+canvas{margin-top:15px;}
+.alert-critical{color:#f87171;}
+.alert-warning{color:#facc15;}
+.insight{color:#93c5fd;font-size:14px;margin-top:8px;}
+</style>
+</head>
+
+<body>
+
+<h1>AI-Driven Financial Fraud Detection Dashboard</h1>
+<p>
+Interactive forensic dashboard using AI-assisted anomaly detection, financial ratios,
+and fraud-risk scoring.
+</p>
+
+<!-- INPUTS -->
+<div class="section card">
+<h2>Financial Inputs (Sample Pre-Filled)</h2>
+
+<label>Revenue Growth (%)</label>
+<input id="rev" type="number" value="28">
+
+<label>Cash Flow Growth (%)</label>
+<input id="cash" type="number" value="4">
+
+<label>Total Accruals (% of Assets)</label>
+<input id="accrual" type="number" value="11">
+
+<label>Debt-to-Equity Ratio</label>
+<input id="debt" type="number" value="3.2">
+
+<label>Working Capital Change (%)</label>
+<input id="wc" type="number" value="18">
+
+<button onclick="analyze()">Run Fraud Analysis</button>
+</div>
+
+<!-- KPI ROW -->
+<div class="section grid">
+  <div class="card"><div class="big" id="risk">–</div>Fraud Risk</div>
+  <div class="card"><div class="big" id="status">–</div>Status</div>
+  <div class="card"><div class="big" id="alerts">0</div>Red Flags</div>
+  <div class="card"><div class="big" id="score">–</div>Fraud Score</div>
+</div>
+
+<!-- SCORES -->
+<div class="section grid">
+  <div class="card"><b>Beneish M-Score</b><div id="beneish"></div></div>
+  <div class="card"><b>Altman Z-Score</b><div id="zscore"></div></div>
+  <div class="card"><b>Piotroski F-Score</b><div id="fscore"></div></div>
+  <div class="card"><b>Earnings Quality</b><div id="quality"></div></div>
+</div>
+
+<!-- CHARTS -->
+<div class="section grid">
+  <div class="card"><b>Revenue vs Cash Flow</b><canvas id="trend" height="120"></canvas></div>
+  <div class="card"><b>Accruals & Leverage</b><canvas id="bars" height="120"></canvas></div>
+</div>
+
+<div class="section grid">
+  <div class="card"><b>Working Capital Stress</b><canvas id="wcChart" height="120"></canvas></div>
+  <div class="card"><b>Fraud Risk Composition</b><canvas id="pie" height="120"></canvas></div>
+</div>
+
+<!-- INSIGHTS -->
+<div class="section card">
+<h2>AI-Generated Insights</h2>
+<ul id="insights"></ul>
+</div>
+
+<script>
+let charts=[];
+
+function analyze(){
+
+let rev=+rev.value, cash=+cash.value, accrual=+accrual.value,
+    debt=+debt.value, wc=+wc.value;
+
+let score=0, alerts=[], insights=[];
+
+if(rev>cash){score+=2;alerts.push("Revenue growth unsupported by cash flows");}
+if(accrual>5){score+=2;alerts.push("High accruals suggest earnings manipulation");}
+if(debt>2){score+=1;alerts.push("High leverage increases pressure to misstate");}
+if(wc>10){score+=1;alerts.push("Unusual working capital movements");}
+
+let risk="LOW",cls="status-low";
+if(score>=5){risk="HIGH";cls="status-high";}
+else if(score>=3){risk="WATCHLIST";cls="status-mid";}
+
+document.getElementById("risk").innerText=risk;
+document.getElementById("status").innerText=risk;
+document.getElementById("status").className="big "+cls;
+document.getElementById("alerts").innerText=alerts.length;
+document.getElementById("score").innerText=score+"/6";
+
+document.getElementById("beneish").innerText=score>=4?"Likely Manipulator":"Unlikely";
+document.getElementById("zscore").innerText=debt>2?"Distress Zone":"Safe Zone";
+document.getElementById("fscore").innerText=cash>rev?7:4;
+document.getElementById("quality").innerText=accrual>5?"Weak":"Healthy";
+
+let ul=document.getElementById("insights");
+ul.innerHTML="";
+alerts.forEach(a=>{
+  let li=document.createElement("li");
+  li.innerText=a;
+  li.className="insight";
+  ul.appendChild(li);
+});
+
+charts.forEach(c=>c.destroy());
+charts=[];
+
+charts.push(new Chart(trend,{type:"line",data:{labels:["Y1","Y2","Y3","Y4","Y5"],
+datasets:[
+{label:"Revenue",data:[rev-4,rev-2,rev-1,rev,rev+1],borderColor:"#38bdf8"},
+{label:"Cash Flow",data:[cash-3,cash-2,cash-1,cash,cash],borderColor:"#f87171"}]}}));
+
+charts.push(new Chart(bars,{type:"bar",data:{labels:["Accruals","Debt"],
+datasets:[{data:[accrual,debt],backgroundColor:["#facc15","#f87171"]}]}));
+
+charts.push(new Chart(wcChart,{type:"line",data:{labels:["Y1","Y2","Y3","Y4","Y5"],
+datasets:[{label:"WC %",data:[wc-6,wc-4,wc-2,wc,wc+1],borderColor:"#a78bfa"}]}}));
+
+charts.push(new Chart(pie,{type:"doughnut",
+data:{labels:["Accruals","Leverage","WC","Cash Gap"],
+datasets:[{data:[accrual,debt,wc,Math.abs(rev-cash)],
+backgroundColor:["#facc15","#f87171","#60a5fa","#34d399"]}]}}));
+}
+</script>
+
+</body>
+</html>
